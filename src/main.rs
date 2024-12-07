@@ -1,17 +1,11 @@
 use crossterm::{
     cursor,
-    event::{self, KeyCode, KeyEvent, KeyModifiers},
+    event::{self, KeyCode, KeyEvent},
     execute,
     terminal::{self, ClearType},
-    ExecutableCommand,
 };
 use rand::Rng;
-use std::{
-    io::{self, stdout, Write},
-    result::Result,
-    thread,
-    time::Duration,
-};
+use std::{thread, time::Duration};
 
 const WIDTH: usize = 20;
 const HEIGHT: usize = 10;
@@ -63,7 +57,7 @@ impl Snake {
         let (head_x, head_y) = self.head();
 
         // Collision with walls
-        if head_x >= WIDTH || head_y >= HEIGHT || head_x < 0 || head_y < 0 {
+        if head_x >= WIDTH || head_y >= HEIGHT {
             return true;
         }
 
@@ -97,27 +91,36 @@ impl Food {
     }
 }
 
-fn draw(snake: &Snake, food: &Food) -> std::result::Result<(), Box<dyn std::error::Error>> {
-    execute!(std::io::stdout(), terminal::Clear(ClearType::All));
-
+fn draw_borders(width: u16, height: u16) -> std::result::Result<(), Box<dyn std::error::Error>> {
     // Draw the border
-    for x in 0..=WIDTH as u16 {
+    for x in 0..=width {
         execute!(std::io::stdout(), cursor::MoveTo(x, 0))?;
         print!("-");
-        execute!(std::io::stdout(), cursor::MoveTo(x, HEIGHT as u16))?;
+        execute!(std::io::stdout(), cursor::MoveTo(x, height))?;
         print!("-");
     }
 
-    for y in 0..=HEIGHT as u16 {
+    for y in 0..=height {
         execute!(std::io::stdout(), cursor::MoveTo(0, y))?;
         print!("|");
-        execute!(std::io::stdout(), cursor::MoveTo(WIDTH as u16, y))?;
+        execute!(std::io::stdout(), cursor::MoveTo(width, y))?;
         print!("|");
     }
 
+    Ok(())
+}
+
+fn clear_all() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    execute!(std::io::stdout(), terminal::Clear(ClearType::All))?;
+    Ok(())
+}
+
+fn draw(snake: &Snake, food: &Food) -> std::result::Result<(), Box<dyn std::error::Error>> {
+    clear_all()?;
+    draw_borders(WIDTH as u16, HEIGHT as u16)?;
     // Draw the snake
     for &(x, y) in &snake.body {
-        execute!(std::io::stdout(), cursor::MoveTo(x as u16, y as u16),)?;
+        execute!(std::io::stdout(), cursor::MoveTo(x as u16, y as u16))?;
         print!("■");
     }
 
@@ -128,7 +131,6 @@ fn draw(snake: &Snake, food: &Food) -> std::result::Result<(), Box<dyn std::erro
         cursor::MoveTo(food_x as u16, food_y as u16),
     )?;
     print!("■");
-
     Ok(())
 }
 
@@ -186,13 +188,16 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
         // Check for collisions
         if snake.collision() {
+            clear_all()?;
+            execute!(std::io::stdout(), cursor::MoveTo(1 as u16, 1 as u16))?;
             println!("\nGame Over!");
+            let (_, y) = cursor::position()?;
+            execute!(std::io::stdout(), cursor::MoveTo(1 as u16, y))?;
             break;
         }
 
         thread::sleep(Duration::from_millis(100));
     }
-
     terminal::disable_raw_mode()?;
     Ok(())
 }
