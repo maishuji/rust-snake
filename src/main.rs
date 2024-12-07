@@ -189,10 +189,10 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         // Check for collisions
         if snake.collision() {
             clear_all()?;
-            execute!(std::io::stdout(), cursor::MoveTo(1 as u16, 1 as u16))?;
+            execute!(std::io::stdout(), cursor::MoveTo(1, 1))?;
             println!("\nGame Over!");
             let (_, y) = cursor::position()?;
-            execute!(std::io::stdout(), cursor::MoveTo(1 as u16, y))?;
+            execute!(std::io::stdout(), cursor::MoveTo(1, y))?;
             break;
         }
 
